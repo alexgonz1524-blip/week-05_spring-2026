@@ -186,21 +186,71 @@ aq_ins_clean <- aq_ins |>
   summarize(ave_lit = sum(abundance, na.rm = TRUE)/7.5) |> 
   # ungroup data frame
   ungroup() |> 
+  # created new column to join with data frames
   unite("date_site", date, site, remove = FALSE) |>  
+  # join with water_quality_clean
   left_join(water_quality_clean, by = "date_site") |> 
+  # joined with taxon_list_clean
   left_join(taxon_list_clean, by = c("taxon" = "verbatim_name")) |> 
+  # fill in full site names
   mutate(site_full = case_when(
     site == "NVBR" ~ "North of Venoco Bridge",
-    site == "NEC" ~ "South of Venoco Bridge",
+    site == "NEC" ~ "East Channel",
     site == "NMC" ~ "Main Channel",
     site == "NPB" ~ "South of Phelps Bridge",
     site == "NPB1" ~ "North of Phelps Bridge",
     site == "NPB2" ~ "Phelps Road",
     site == "NWP" ~  "West Pond",
     site == "NDC" ~ "Devereux Creek"
-  ))
+  )) |> 
+  # setting factor levels for full site name by median salinity
+  mutate(site_full = fct_reorder(site_full,
+                                 med_sal,
+                                 .fun = "median",
+                                 .na_rm = TRUE),
+         site_full = fct_rev(site_full))
 
 ```
 
+# 3. Visualizing
 
+## Visualizing Missing values
 
+```{r}
+#| label: missing-viz
+
+gg_miss_var(aq_ins_clean)
+```
+
+Missing values for salinity, pH, and dissolved oxygen might influence later figures
+
+## Visualize salinity
+
+- x-axis: `site`
+- y-axis: `mean_sal`
+- geometry to show salinity during survey: `geom_jitter()`
+- geometry to show mean salinity: `stat_summary()`
+
+```{r}
+#| label: salinity-plot
+#| fig-width: 8
+#| fig-height: 6
+
+# base layer
+salinity_plot <- ggplot(data = aq_ins_clean,
+       # x-axis: full site name
+       # y-axis: median salinity
+       mapping = aes(x = site_full,
+                     y = med_sal)) +
+  # first layer: salinity measurements at each survey
+  geom_jitter(height = 0) +
+  stat_summary(geom = "point",
+               fun = median,
+               color = "red",
+               size = 2)
+
+# displaying plot
+salinity_plot
+```
+
+Sites seem to differ in salinity. North of Venoco Bridge, East Channel, and Main Channel tend to be hypersaline, while North of Phelps Bridge, Phelps Road, and Devereux Creek is the least saline. South of Phelps Bridge tends to be more freshwater but is higher in salinity than the other, lower salinity sites.

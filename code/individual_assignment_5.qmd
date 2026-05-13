@@ -346,5 +346,34 @@ There is less ostracod than copepod in all sites except for the main channel and
 
 ### b. Wrangle your data
 
+```{r}
+#| label: abundance-cleaning
+
+abundance_clean <- aq_ins_clean |> 
+ # log + 1 transform mean abundance per liter
+  mutate(log_ave_lit = log(ave_lit + 1)) |> 
+  # changed taxon names to title case
+   mutate(taxon = to_any_case(taxon, case = "title")) 
+
+
+
+
+  group_by(taxon) |> 
+  summarise(n = n())
+
+mutate(abundance = n()) 
+  ungroup()
+   mutate(taxon = fct_reorder(taxon, n, .fun = max))
+  
+  #mutate(taxon = fct_reorder(taxon,
+                                 med_sal,
+                                 .fun = "median",
+                                 .na_rm = TRUE),
+         taxon = fct_rev(taxon))
+
+
+
+slice_sample(abundance_clean, n = 10)
+```
 
 

@@ -36,3 +36,5 @@ library(patchwork)
 The rendered key for the code in this repository is here [View PDF](code/week-05_in-class-KEY.pdf).
 
 The rendered document from class is here [ViewPDF](code/in-class-template.pdf).
+
+The rendered document for individual assignment 5 [ViewPDF](code/individual_assignment_5.pdf)

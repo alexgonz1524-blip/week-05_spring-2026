@@ -334,5 +334,17 @@ salinity_plot / ( copepod_plot | ostracod_plot )
 
 There is less ostracod than copepod in all sites except for the main channel and South of Phelps bridge where the medians are almost the same (ostracod slightly higher) especially in the South of Phelps bridge since point distributions are much higher.There does not seem to be any correlation between salinity and the abundance of copepods per site due to the randomness of abundance per site.
 
+## 2. Visualizing total abundance as a function of salinity
+
+### a. Plan your figure
+
+- x-axis: `med_sal`
+- y-axis: `ave_lit`
+- color: `taxon`
+- geometry: `geom_jitter`
+- facets: `stat_summary`
+
+### b. Wrangle your data
+
 
 

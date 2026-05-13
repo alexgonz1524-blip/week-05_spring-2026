@@ -25,6 +25,7 @@ library(tidyverse)
 library(here)
 library(janitor)
 library(snakecase)
+library(NatParksPalettes)
 
 # reading .xlxs files
 library(readxl)
@@ -278,7 +279,9 @@ In this section, you will create another figure to add to the multipanel plot of
 ```{r}
 #| label: ostracod-cleaning
 
+# creating new object from aq_ins_clean
 ostracod <- aq_ins_clean |> 
+  # filtered to only include ostracod
   filter(taxon == "ostracod") |> 
  # log + 1 transform mean abundance per liter
   mutate(log_ave_lit = log(ave_lit + 1)) 
@@ -327,6 +330,7 @@ ostracod_plot
 #| fig-width: 14
 #| fig-height: 12
 
+# organizing using patchwork arguments
 salinity_plot / ( copepod_plot | ostracod_plot )
 ```
 
@@ -341,39 +345,62 @@ There is less ostracod than copepod in all sites except for the main channel and
 - x-axis: `med_sal`
 - y-axis: `ave_lit`
 - color: `taxon`
-- geometry: `geom_jitter`
-- facets: `stat_summary`
+- geometry: `geom_point`
+- facets: `taxon`
 
 ### b. Wrangle your data
 
 ```{r}
 #| label: abundance-cleaning
 
+# creating new object from aq_ins_clean
 abundance_clean <- aq_ins_clean |> 
  # log + 1 transform mean abundance per liter
   mutate(log_ave_lit = log(ave_lit + 1)) |> 
   # changed taxon names to title case
-   mutate(taxon = to_any_case(taxon, case = "title")) 
+   mutate(taxon = to_any_case(taxon, case = "title")) |> 
+  # reorganizing taxons from most to least abundant 
+  mutate(taxon = fct_reorder(taxon, log_ave_lit, .fun = max, .desc = TRUE))
 
-
-
-
-  group_by(taxon) |> 
-  summarise(n = n())
-
-mutate(abundance = n()) 
-  ungroup()
-   mutate(taxon = fct_reorder(taxon, n, .fun = max))
-  
-  #mutate(taxon = fct_reorder(taxon,
-                                 med_sal,
-                                 .fun = "median",
-                                 .na_rm = TRUE),
-         taxon = fct_rev(taxon))
-
-
-
+# sample of 10 rows of the cleaned dataset
 slice_sample(abundance_clean, n = 10)
 ```
 
+### c. Code your figure
 
+```{r}
+#| label: overall-abundance-count
+#| fig-width: 8
+#| fig-height: 8
+
+# base layer, creating oobject to store plot
+abundance_plot <- ggplot(data = abundance_clean,
+                   # x-axis: full site name
+                   # y-axis: log transformed average count/L
+                   mapping = aes(x = med_sal,
+                                 y = log_ave_lit,
+                                 color = taxon)) +
+  # first layer: points to represent observations
+  geom_point(shape = 16) +
+  # custom colors
+   scale_color_manual(values = natparks.pals("KingsCanyon", n = 9,
+                                             type = "continuous")) +
+  # separating by taxon
+  facet_wrap(~taxon, scales = "free") +
+  # relabelling x- and y-axis, adding title
+  labs(x = "Salinity (ppt)",
+       y = "log + 1 transformed average abundance/L",
+       title = "Log Transformed Abundance influenced by Salinity") +
+  # using different theme
+  theme_bw() +
+  # getting rid of legend
+  theme(legend.position = "none")
+
+# displaying object
+abundance_plot
+
+```
+
+### d. Interpret your figure
+
+Across all taxa there is a relatively higher abundance near 0 ppt salinity, suggesting these taxa prefer a lower salinity level to live in. Ostracods, copepods, and cladocera all have the most apparent trend in low salinity preference as the log transformed abundance has multiple observations from 2, all the way to 6. Annelida Oligochaete, Copepod, Hemiptera Corixidae, and Diptera Ceratopogonidae all have a bimodal distribution with peaks or high observations around 40 ppt. Finally, all taxa show exceptionally low abundance past 60 ppt except for Copepod and Hemiptera Corixidae which show some abundance and tolerance to 60 ppt.

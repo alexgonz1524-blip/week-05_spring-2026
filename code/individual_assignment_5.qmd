@@ -1,6 +1,7 @@
 ---
 title: "Individual_Assignment_5"
 author: "Alex Gonzales"
+date: "5/12/26"
 format: 
  pdf:
     include-in-header: 
@@ -28,6 +29,14 @@ library(snakecase)
 # reading .xlxs files
 library(readxl)
 
+# wrap axis labels
+library(scales)
+
+# visualize missing data
+library(naniar)
+
+# arrange plots
+library(patchwork)
 ```
 
 
@@ -185,7 +194,7 @@ salinity_plot <- ggplot(data = aq_ins_clean,
   stat_summary(geom = "point",
                fun = median,
                color = "red",
-               size = 2) +
+               size = 3) +
   #  wrapping x-axis labels
   scale_x_discrete(labels = label_wrap(width = 15)) +
   # relabeling axes, adding title
@@ -226,7 +235,7 @@ copepod_plot <- ggplot(data = copepods,
   # second layer: points to represent medians
   stat_summary(geom = "point",
                fun = "median",
-               size = 2,
+               size = 3,
                color = "blue") +
   # wrapping x-axis text
   scale_x_discrete(labels = label_wrap(15)) +
@@ -260,13 +269,66 @@ In this section, you will create another figure to add to the multipanel plot of
 ### a. Plan your figure
 
 - x-axis: `site_full`
-- y-axis: `ave_lit`
+- y-axis: `log_ave_lit`
 - geometry to represent average abundance/L: `geom_jitter()`
 - geometry to represent medians: `stat_summary()`
 
+### b. Wrangle your data
 
+```{r}
+#| label: ostracod-cleaning
 
+ostracod <- aq_ins_clean |> 
+  filter(taxon == "ostracod") |> 
+ # log + 1 transform mean abundance per liter
+  mutate(log_ave_lit = log(ave_lit + 1)) 
+```
 
+### c. Code your figure
+
+```{r}
+#| label: ostracod-plot
+#| fig-width: 8
+#| fig-height: 4
+
+# base layer, creating oobject to store plot
+ostracod_plot <- ggplot(data = ostracod,
+                   # x-axis: full site name
+                   # y-axis: log transformed average count/L
+                   mapping = aes(x = site_full,
+                                 y = log_ave_lit)) +
+  # first layer: points to represent observations, jitter to represent each sample
+  geom_jitter(height = 0,
+              shape = 21,
+              width = 0.1) +
+  # second layer: points to represent medians
+  stat_summary(geom = "point",
+               fun = "median",
+               size = 3,
+               color = "forestgreen") +
+  # wrapping x-axis text
+  scale_x_discrete(labels = label_wrap(15)) +
+  # relabelling x- and y-axis, adding title
+  labs(x = "Site",
+       y = "log + 1 transformed average abundance/L",
+       title = "Ostracod Abundance") +
+  # using different theme
+  theme_bw()
+
+# displaying object
+ostracod_plot
+
+```
+
+### d. Create a multipanel figure
+
+```{r}
+#| label: multipanel-2
+#| fig-width: 14
+#| fig-height: 12
+
+salinity_plot / ( copepod_plot | ostracod_plot )
+```
 
 
 
